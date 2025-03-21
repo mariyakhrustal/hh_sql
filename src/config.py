@@ -1,26 +1,12 @@
 from configparser import ConfigParser
 
-# ID работодателей, от которых вы будете получать данные о вакансиях по API
-employer_id = [
-    '41862',  # Контур
-    '9764865',  # Роскосмос
-    '638950',  # Ресурс Групп
-    '816144',  # ВкусВилл
-    '23186',  # Группа Компаний РУСАГРО
-    "3036416",  # Департамент Ф53
-    "78638",  # Т-Банк
-    "2748",  # Ростелеком
-    "2180",  # Ozon
-    "3529",  # СБЕР
-]
 
+def config(filename: str="database.ini", section: str="postgresql") -> dict:
 
-def config(filename: str = "database.ini", section: str = "postgresql") -> dict:
-    """Функция читает конфигурационный файл и извлекает параметры для подключения к базе данных"""
     # create a parser
     parser = ConfigParser()
     # read config file
-    parser.read(filename)
+    parser.read(filename, encoding='utf-8')
     db = {}
     if parser.has_section(section):
         params = parser.items(section)
