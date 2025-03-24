@@ -1,5 +1,3 @@
-# from typing import Any
-
 import psycopg2
 
 
@@ -8,7 +6,7 @@ class PostgreSQL:
     Класс для работы с базой данных. Создание базы данных, таблиц и подключение к БД
     """
 
-    def __init__(self, params: dict, database_name: str = "headhunter"):
+    def __init__(self, params: dict, database_name: str = "headhunter") -> None:
         self.database_name = database_name
         self.__params = params
         self.conn = None  # Инициализация атрибута conn
@@ -21,11 +19,11 @@ class PostgreSQL:
                 port=self.__params.get("port", 5432),
             )
             self.conn.autocommit = True
-            print(f"Подключился к базе данных 'postgres'")
+            print("Подключился к базе данных 'postgres'")
         except psycopg2.Error as e:
             print(f"Ошибка подключения к базе данных PostgreSQL: {e}")
 
-    def connect_to_db(self):
+    def connect_to_db(self) -> None:
         """Метод для подключения к базе данных"""
         if self.conn:  # Проверка наличия соединения
             try:
@@ -42,7 +40,7 @@ class PostgreSQL:
         else:
             print("Ошибка соединения")
 
-    def create_db(self):
+    def create_db(self) -> None:
         """Создание базы данных в том случае, если база данных ещё не существует"""
         if self.conn:  # Проверка наличия соединения
             try:
@@ -65,16 +63,19 @@ class PostgreSQL:
         self.connect_to_db()
         try:
             with self.conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS employers(
                         employer_id INT PRIMARY KEY,
                         employer_name VARCHAR(255),
                         employer_url VARCHAR(255)
                     )
-                """)
+                """
+                )
                 print("Создание таблицы работодателей")
             with self.conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS vacancies(
                         vacancy_id SERIAL PRIMARY KEY,
                         vacancy_name VARCHAR(255),
@@ -84,7 +85,8 @@ class PostgreSQL:
                         city VARCHAR(255),
                         FOREIGN KEY (employer_id) REFERENCES employers(employer_id)
                     )
-                """)
+                """
+                )
                 print("Создание таблицы вакансий")
         except psycopg2.Error as e:
             print(f"Ошибка при создании таблиц {e}")
