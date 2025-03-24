@@ -41,6 +41,8 @@ class HeadHunterAPI:
             response = requests.get(url, params=params)
             if response.status_code == 200:
                 return response.json()
+            else:
+                raise requests.HTTPError(f"Ошибка при запросе к API: статус {response.status_code}")
         except Exception as e:
             print(f"Ошибка: {e}")
             return []

@@ -1,5 +1,4 @@
 # from typing import Any
-from importlib.metadata import pass_none
 
 import psycopg2
 
@@ -114,7 +113,7 @@ class PostgreSQL:
                             """,
                             (employer_id, employer_name, employer_url),
                         )
-                        result = cur.fetchone() # Вернёт employer_id
+                        result = cur.fetchone()  # Вернёт employer_id
                         if result:
                             employer_id = result[0]
                     else:
@@ -130,7 +129,7 @@ class PostgreSQL:
                         INSERT INTO vacancies (vacancy_name, employer_id, vacancy_url, salary, city)
                         VALUES (%s, %s, %s, %s, %s)
                         """,
-                            (vacancy_name, employer_id, vacancy_url, salary, city),
+                        (vacancy_name, employer_id, vacancy_url, salary, city),
                     )
                 print("Заполнилась таблицы")
         except psycopg2.Error as e:
