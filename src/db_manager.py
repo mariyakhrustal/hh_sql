@@ -1,8 +1,21 @@
+import logging
+import os
 from typing import Any
 
 import psycopg2
 
 from src.config import config
+
+logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "logs")
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)  # pragma: no cover
+
+db_logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler(os.path.join(logs_dir, "db_manager.log"), mode="w", encoding="utf-8")
+file_formatter = logging.Formatter("%(name)s - %(funcName)s - %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formatter)
+db_logger.addHandler(file_handler)
+db_logger.setLevel(logging.DEBUG)
 
 
 class DBManager:
@@ -20,18 +33,20 @@ class DBManager:
             )
             with conn.cursor() as cur:
                 if params:
+                    db_logger.info("В запрос в базу данных добавлены параметры")
                     cur.execute(query, params)
                 else:
+                    db_logger.info("Запрос в базу данных без параметров")
                     cur.execute(query)
                 if query.strip().lower().startswith("select"):
                     fetch = cur.fetchall()
             conn.commit()
             conn.close()
+            db_logger.info("Закрытие соединения после выполнения запроса в базу данных")
             return fetch
         except Exception as e:
-            print(f"Ошибка при выполнении запроса: {e}")
-        finally:
-            print("Закрытие соединения")
+            db_logger.warning(f"Ошибка при выполнении запроса: {e}")
+        db_logger.warning("Не удалось выполнись запрос в базу данных")
         return fetch
 
     def get_companies_and_vacancies_count(self) -> Any:

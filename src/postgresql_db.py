@@ -1,4 +1,18 @@
+import logging
+import os
+
 import psycopg2
+
+logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "logs")
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)  # pragma: no cover
+
+postgres_logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler(os.path.join(logs_dir, "postgresql.log"), mode="w", encoding="utf-8")
+file_formatter = logging.Formatter("%(name)s - %(funcName)s - %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formatter)
+postgres_logger.addHandler(file_handler)
+postgres_logger.setLevel(logging.DEBUG)
 
 
 class PostgreSQL:
@@ -11,6 +25,7 @@ class PostgreSQL:
         self.__params = params
         self.conn = None  # Инициализация атрибута conn
         try:
+            postgres_logger.info("Попытка подключения к базе данных PostgreSQL...")
             self.conn = psycopg2.connect(
                 dbname="postgres",
                 user=self.__params.get("user"),
@@ -19,14 +34,16 @@ class PostgreSQL:
                 port=self.__params.get("port", 5432),
             )
             self.conn.autocommit = True
-            print("Подключился к базе данных 'postgres'")
+            postgres_logger.info("Подключился к базе данных 'postgres'")
         except psycopg2.Error as e:
-            print(f"Ошибка подключения к базе данных PostgreSQL: {e}")
+            postgres_logger.error(f"Ошибка подключения к базе данных PostgreSQL: {e}")
 
     def connect_to_db(self) -> None:
         """Метод для подключения к базе данных"""
         if self.conn:  # Проверка наличия соединения
+            postgres_logger.info("Соединение с базой данных установлено.")
             try:
+                postgres_logger.info(f"Попытка подключения к базе данных {self.database_name}.")
                 self.conn = psycopg2.connect(
                     dbname=self.database_name,
                     user=self.__params.get("user"),
@@ -35,33 +52,41 @@ class PostgreSQL:
                     port=self.__params.get("port", 5432),
                 )
                 self.conn.autocommit = True  # чтобы изменения автоматически сохранялись
+                postgres_logger.info(f"Успешное подключение к базе данных {self.database_name}.")
             except psycopg2.Error as e:
-                print(f"Ошибка подключения к базе данных {self.database_name}: {e}")
+                postgres_logger.error(f"Ошибка подключения к базе данных {self.database_name}: {e}")
         else:
-            print("Ошибка соединения")
+            postgres_logger.critical(f"Не удалось подключиться к базе данных {self.database_name}")
+            raise Exception(f"Не удалось подключиться к базе данных {self.database_name}")
 
     def create_db(self) -> None:
         """Создание базы данных в том случае, если база данных ещё не существует"""
         if self.conn:  # Проверка наличия соединения
+            postgres_logger.info("Соединение с базой данных установлено.")
             try:
+                postgres_logger.info(f"Попытка создать базу данных {self.database_name}, если её не существует")
                 with self.conn.cursor() as cur:
                     cur.execute(f"DROP DATABASE IF EXISTS {self.database_name}")
                     cur.execute(f"CREATE DATABASE {self.database_name}")
-                print(f"Создание базы данных {self.database_name}, если её не существует")
+                    postgres_logger.info(f"Успешное создание базы данных {self.database_name}, если её не существует")
             except psycopg2.Error as e:
+                postgres_logger.error(f"Ошибка при создании базы данных {self.database_name}: {e}")
                 print(f"Ошибка при создании базы данных {self.database_name}: {e}")
             finally:
                 # Закрытие соединения, если оно существует
                 if self.conn:
                     self.conn.close()
-                    print("Закрытие соединения")
+                    postgres_logger.info("Закрытие соединения")
         else:
-            print("Ошибка соединения")
+            postgres_logger.critical(f"Не удалось подключиться к базе данных {self.database_name}")
+            raise Exception(f"Не удалось подключиться к базе данных {self.database_name}")
 
     def create_tables_in_db(self) -> None:
         """Создание таблиц в базе данных для вакансий и работодателей"""
         self.connect_to_db()
+        postgres_logger.info(f"Соединение с базой данных {self.database_name} для создания таблиц.")
         try:
+            postgres_logger.info("Попытка создать таблицу для работодателей")
             with self.conn.cursor() as cur:
                 cur.execute(
                     """
@@ -72,7 +97,8 @@ class PostgreSQL:
                     )
                 """
                 )
-                print("Создание таблицы работодателей")
+                postgres_logger.info("Создание таблицы работодателей")
+            postgres_logger.info("Попытка создать таблицу для вакансий")
             with self.conn.cursor() as cur:
                 cur.execute(
                     """
@@ -87,18 +113,21 @@ class PostgreSQL:
                     )
                 """
                 )
-                print("Создание таблицы вакансий")
+                postgres_logger.info("Создание таблицы вакансий")
         except psycopg2.Error as e:
             print(f"Ошибка при создании таблиц {e}")
+            postgres_logger.error(f"Ошибка при создании таблиц {e}")
         finally:
             self.conn.commit()
             self.conn.close()
-            print("Закрытие соединения")
+            postgres_logger.info("Закрытие соединения")
 
     def save_data_to_db_tables(self, vacancies: list[dict]) -> None:
         """Сохранение данных в таблицы в базе данных"""
         self.connect_to_db()
+        postgres_logger.info(f"Соединение с базой данных {self.database_name} для сохранения данных в таблицы.")
         try:
+            postgres_logger.info("Попытка заполнить таблицы")
             with self.conn.cursor() as cur:
                 for vacancy in vacancies:
                     employer = vacancy.get("employer")
@@ -133,10 +162,11 @@ class PostgreSQL:
                         """,
                         (vacancy_name, employer_id, vacancy_url, salary, city),
                     )
-                print("Заполнилась таблицы")
+                postgres_logger.info(f"Заполнилась таблицы в базе данных {self.database_name}")
         except psycopg2.Error as e:
             print(f"Ошибка при заполнении таблиц данными: {e}")
+            postgres_logger.error(f"Ошибка при заполнении таблиц данными: {e}")
         finally:
             self.conn.commit()
             self.conn.close()
-            print("Закрытие соединения")
+            postgres_logger.info("Закрытие соединения")
