@@ -4,6 +4,8 @@ from typing import Any
 
 import requests
 
+from src.base_api import BaseAPI
+
 logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "logs")
 if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)  # pragma: no cover
@@ -16,10 +18,11 @@ api_logger.addHandler(file_handler)
 api_logger.setLevel(logging.DEBUG)
 
 
-class HeadHunterAPI:
+class HeadHunterAPI(BaseAPI):
     """Класс для работы с платформой hh.ru"""
 
     def __init__(self, employer_id: list) -> None:
+        super().__init__(employer_id)
         self.__base_url = "https://api.hh.ru"
         self.__employer_id = employer_id
         self.__params = self._get_params()

@@ -3,6 +3,8 @@ import os
 
 import psycopg2
 
+from src.base_db import BaseDB
+
 logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "logs")
 if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)  # pragma: no cover
@@ -15,12 +17,13 @@ postgres_logger.addHandler(file_handler)
 postgres_logger.setLevel(logging.DEBUG)
 
 
-class PostgreSQL:
+class PostgreSQL(BaseDB):
     """
     Класс для работы с базой данных. Создание базы данных, таблиц и подключение к БД
     """
 
     def __init__(self, params: dict, database_name: str = "headhunter") -> None:
+        super().__init__(params, database_name)
         self.database_name = database_name
         self.__params = params
         self.conn = None  # Инициализация атрибута conn
